@@ -28,6 +28,7 @@ CMD_ARM_HOME = 0x03
 CMD_DISARM = 0x04
 
 MAX_ZONES = 32
+PIN_MAX_LENGTH = 6
 
 # Default number of seconds to wait for a response before giving up. Defined
 # here (rather than in const.py) so this module has no dependency on the
@@ -86,7 +87,11 @@ def _checksum(data: bytes) -> int:
 
 
 def _build_frame(command: int, pin: str, payload: bytes = b"") -> bytes:
-    pin_bytes = pin.encode("ascii").ljust(6, b"\x00")[:6]
+    if not 1 <= len(pin) <= PIN_MAX_LENGTH:
+        raise OrisecError(
+            f"PIN must be between 1 and {PIN_MAX_LENGTH} characters long"
+        )
+    pin_bytes = pin.encode("ascii").ljust(PIN_MAX_LENGTH, b"\x00")
     body = bytes([command]) + pin_bytes + bytes([len(payload)]) + payload
     return bytes([STX]) + body + bytes([_checksum(body), ETX])
 
@@ -106,7 +111,7 @@ def _parse_frame(data: bytes) -> OrisecStatus:
         raise OrisecAuthError("Panel rejected the configured PIN")
 
     flags = body[0] if body else 0
-    zone_bitmap = body[1:] if len(body) > 1 else b""
+    zone_bitmap = body[1 : 1 + (MAX_ZONES // 8)] if len(body) > 1 else b""
 
     zones: dict[int, bool] = {}
     for zone_index in range(MAX_ZONES):

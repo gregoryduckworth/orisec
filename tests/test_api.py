@@ -10,7 +10,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "custom_components" / "orisec"))
 
 from api import (  # noqa: E402  pylint: disable=wrong-import-position
+    CMD_ARM_AWAY,
+    CMD_ARM_HOME,
+    CMD_DISARM,
+    CMD_STATUS,
     ETX,
+    PIN_MAX_LENGTH,
     STX,
     OrisecAuthError,
     OrisecClient,
@@ -29,11 +34,13 @@ class _FakePanelProtocol(asyncio.DatagramProtocol):
         self._response_body = response_body
         self._reject_auth = reject_auth
         self.transport: asyncio.DatagramTransport | None = None
+        self.last_command: int | None = None
 
     def connection_made(self, transport: asyncio.BaseTransport) -> None:
         self.transport = transport  # type: ignore[assignment]
 
     def datagram_received(self, data: bytes, addr) -> None:  # noqa: ANN001
+        self.last_command = data[1]
         if self._reject_auth:
             body = bytes([0xFF])
         elif self._response_body is not None:
@@ -52,7 +59,7 @@ async def _start_fake_panel(response_body: bytes | None = None, reject_auth: boo
         local_addr=("127.0.0.1", 0),
     )
     host, port = transport.get_extra_info("sockname")
-    return transport, host, port
+    return transport, protocol, host, port
 
 
 def test_build_and_parse_frame_roundtrip() -> None:
@@ -95,18 +102,19 @@ def test_parse_frame_raises_auth_error() -> None:
 
 @pytest.mark.asyncio
 async def test_client_get_status_against_fake_panel() -> None:
-    transport, host, port = await _start_fake_panel(bytes([0b00000001]))
+    transport, protocol, host, port = await _start_fake_panel(bytes([0b00000001]))
     try:
         client = OrisecClient(host, port, "1234", timeout=2)
         status = await client.async_get_status()
         assert status.armed_away is True
+        assert protocol.last_command == CMD_STATUS
     finally:
         transport.close()
 
 
 @pytest.mark.asyncio
 async def test_client_raises_auth_error_for_rejected_pin() -> None:
-    transport, host, port = await _start_fake_panel(reject_auth=True)
+    transport, protocol, host, port = await _start_fake_panel(reject_auth=True)
     try:
         client = OrisecClient(host, port, "0000", timeout=2)
         with pytest.raises(OrisecAuthError):
@@ -121,3 +129,34 @@ async def test_client_raises_connection_error_on_timeout() -> None:
     client = OrisecClient("127.0.0.1", 1, "1234", timeout=0.2)
     with pytest.raises(OrisecConnectionError):
         await client.async_get_status()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method_name", "expected_command"),
+    [
+        ("async_arm_away", CMD_ARM_AWAY),
+        ("async_arm_home", CMD_ARM_HOME),
+        ("async_disarm", CMD_DISARM),
+    ],
+)
+async def test_client_command_methods_send_expected_command(
+    method_name: str, expected_command: int
+) -> None:
+    transport, protocol, host, port = await _start_fake_panel()
+    try:
+        client = OrisecClient(host, port, "1234", timeout=2)
+        await getattr(client, method_name)()
+        assert protocol.last_command == expected_command
+    finally:
+        transport.close()
+
+
+def test_build_frame_rejects_pin_that_is_too_long() -> None:
+    with pytest.raises(OrisecError):
+        _build_frame(CMD_STATUS, "1" * (PIN_MAX_LENGTH + 1))
+
+
+def test_build_frame_rejects_empty_pin() -> None:
+    with pytest.raises(OrisecError):
+        _build_frame(CMD_STATUS, "")

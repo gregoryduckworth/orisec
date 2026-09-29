@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.data_entry_flow import FlowResult
 
-from .api import OrisecAuthError, OrisecClient, OrisecConnectionError
+from .api import OrisecAuthError, OrisecClient, OrisecConnectionError, PIN_MAX_LENGTH
 from .const import CONF_PIN, DEFAULT_PORT, DEFAULT_TIMEOUT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,8 +17,10 @@ _LOGGER = logging.getLogger(__name__)
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): str,
-        vol.Optional(CONF_PORT, default=DEFAULT_PORT): int,
-        vol.Required(CONF_PIN): str,
+        vol.Optional(CONF_PORT, default=DEFAULT_PORT): vol.All(
+            vol.Coerce(int), vol.Range(min=1, max=65535)
+        ),
+        vol.Required(CONF_PIN): vol.All(str, vol.Length(min=1, max=PIN_MAX_LENGTH)),
     }
 )
 
