@@ -29,6 +29,11 @@ CMD_DISARM = 0x04
 
 MAX_ZONES = 32
 
+# Default number of seconds to wait for a response before giving up. Defined
+# here (rather than in const.py) so this module has no dependency on the
+# rest of the Home Assistant integration and can be tested in isolation.
+DEFAULT_TIMEOUT = 5
+
 
 class OrisecError(Exception):
     """Base error for the Orisec client."""
@@ -91,11 +96,13 @@ def _parse_frame(data: bytes) -> OrisecStatus:
         raise OrisecError("Malformed response frame from panel")
 
     body = data[1:-2]
+    if not body:
+        raise OrisecError("Response frame from panel is missing a body")
     checksum = data[-2]
     if _checksum(body) != checksum:
         raise OrisecError("Checksum mismatch in response frame from panel")
 
-    if body and body[0] == 0xFF:
+    if body[0] == 0xFF:
         raise OrisecAuthError("Panel rejected the configured PIN")
 
     flags = body[0] if body else 0
@@ -119,7 +126,9 @@ def _parse_frame(data: bytes) -> OrisecStatus:
 class OrisecClient:
     """Async client used to talk to an Orisec alarm panel over UDP."""
 
-    def __init__(self, host: str, port: int, pin: str, timeout: float = 5) -> None:
+    def __init__(
+        self, host: str, port: int, pin: str, timeout: float = DEFAULT_TIMEOUT
+    ) -> None:
         self._host = host
         self._port = port
         self._pin = pin

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from datetime import timedelta
 
+from .api import DEFAULT_TIMEOUT  # noqa: F401  (re-exported for convenience)
+
 DOMAIN = "orisec"
 
 CONF_HOST = "host"
@@ -10,7 +12,6 @@ CONF_PORT = "port"
 CONF_PIN = "pin"
 
 DEFAULT_PORT = 20202
-DEFAULT_TIMEOUT = 5
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=10)
 
 MANUFACTURER = "Orisec"

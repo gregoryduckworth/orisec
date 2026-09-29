@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .api import OrisecClient, OrisecError
-from .const import CONF_HOST, CONF_PIN, CONF_PORT, DOMAIN
+from .const import CONF_HOST, CONF_PIN, CONF_PORT, DEFAULT_TIMEOUT, DOMAIN
 from .coordinator import OrisecDataUpdateCoordinator
 
 PLATFORMS = ["alarm_control_panel", "binary_sensor"]
@@ -18,6 +18,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.data[CONF_HOST],
         entry.data[CONF_PORT],
         entry.data[CONF_PIN],
+        timeout=DEFAULT_TIMEOUT,
     )
 
     coordinator = OrisecDataUpdateCoordinator(hass, client)
