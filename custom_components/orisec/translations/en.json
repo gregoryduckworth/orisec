@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Connect to your Orisec alarm panel over the local network.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "pin": "PIN"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the panel. Check the host/port.",
+      "invalid_auth": "The PIN was rejected by the panel.",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This panel is already configured"
+    }
+  }
+}
