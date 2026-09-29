@@ -37,6 +37,8 @@ FLAG_TRIGGERED = 0x04
 FLAG_NOT_READY = 0x08
 
 # Sentinel value returned as the flags byte when the supplied PIN is rejected.
+# Only bits 0-3 above are currently defined, so 0xFF can never be produced by a
+# legitimate combination of flags; keep it that way if new flags are added.
 AUTH_REJECTED = 0xFF
 
 # Default number of seconds to wait for a response before giving up. Defined

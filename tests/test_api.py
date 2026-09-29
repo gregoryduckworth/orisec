@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -144,6 +145,18 @@ async def test_client_raises_connection_error_on_timeout() -> None:
     client = OrisecClient("127.0.0.1", 1, "1234", timeout=0.2)
     with pytest.raises(OrisecConnectionError):
         await client.async_get_status()
+
+
+@pytest.mark.asyncio
+async def test_client_raises_connection_error_when_socket_setup_fails() -> None:
+    client = OrisecClient("127.0.0.1", 20202, "1234", timeout=2)
+    loop = asyncio.get_running_loop()
+
+    with patch.object(
+        loop, "create_datagram_endpoint", side_effect=OSError("network unreachable")
+    ):
+        with pytest.raises(OrisecConnectionError):
+            await client.async_get_status()
 
 
 @pytest.mark.asyncio
