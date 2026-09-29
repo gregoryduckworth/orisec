@@ -8,10 +8,12 @@ from homeassistant.components.alarm_control_panel import (
 from homeassistant.components.alarm_control_panel import AlarmControlPanelState
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .api import OrisecError
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import OrisecDataUpdateCoordinator
 
@@ -63,15 +65,22 @@ class OrisecAlarmPanel(CoordinatorEntity[OrisecDataUpdateCoordinator], AlarmCont
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""
-        await self.coordinator.client.async_disarm()
-        await self.coordinator.async_request_refresh()
+        await self._async_send_command(self.coordinator.client.async_disarm)
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send arm away command."""
-        await self.coordinator.client.async_arm_away()
-        await self.coordinator.async_request_refresh()
+        await self._async_send_command(self.coordinator.client.async_arm_away)
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
-        await self.coordinator.client.async_arm_home()
+        await self._async_send_command(self.coordinator.client.async_arm_home)
+
+    async def _async_send_command(self, command) -> None:  # noqa: ANN001
+        """Send a command to the panel, surfacing failures to the UI."""
+        try:
+            await command()
+        except OrisecError as err:
+            raise HomeAssistantError(
+                f"Failed to send command to the Orisec panel: {err}"
+            ) from err
         await self.coordinator.async_request_refresh()

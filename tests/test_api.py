@@ -93,6 +93,21 @@ def test_parse_frame_rejects_missing_markers() -> None:
         _parse_frame(b"\x00\x00\x00")
 
 
+def test_parse_frame_rejects_frame_shorter_than_minimum_length() -> None:
+    # STX + checksum(of empty body) + ETX is 3 bytes, one short of the
+    # 4-byte minimum (STX + 1-byte body + checksum + ETX).
+    too_short_frame = bytes([STX, _checksum(b""), ETX])
+    with pytest.raises(OrisecError):
+        _parse_frame(too_short_frame)
+
+
+def test_parse_frame_accepts_minimum_length_frame() -> None:
+    body = bytes([0x00])
+    minimal_frame = bytes([STX]) + body + bytes([_checksum(body), ETX])
+    status = _parse_frame(minimal_frame)
+    assert status.zones == {}
+
+
 def test_parse_frame_raises_auth_error() -> None:
     body = bytes([0xFF])
     frame = bytes([STX]) + body + bytes([_checksum(body), ETX])

@@ -11,6 +11,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .api import MAX_ZONES
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import OrisecDataUpdateCoordinator
 
@@ -23,12 +24,9 @@ async def async_setup_entry(
     """Set up Orisec zone binary sensors from a config entry."""
     coordinator: OrisecDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    status = coordinator.data
-    zone_numbers = sorted(status.zones) if status else []
-
     async_add_entities(
         OrisecZoneBinarySensor(coordinator, entry, zone_number)
-        for zone_number in zone_numbers
+        for zone_number in range(1, MAX_ZONES + 1)
     )
 
 
