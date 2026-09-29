@@ -1,10 +1,7 @@
 """Binary sensor platform for Orisec zones."""
 from __future__ import annotations
 
-from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
-    BinarySensorEntity,
-)
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
@@ -36,7 +33,6 @@ class OrisecZoneBinarySensor(
     """Representation of a single Orisec zone."""
 
     _attr_has_entity_name = True
-    _attr_device_class = BinarySensorDeviceClass.MOTION
 
     def __init__(
         self,
