@@ -30,6 +30,15 @@ CMD_DISARM = 0x04
 MAX_ZONES = 32
 PIN_MAX_LENGTH = 6
 
+# Bit flags within the first byte of a status frame's body.
+FLAG_ARMED_AWAY = 0x01
+FLAG_ARMED_HOME = 0x02
+FLAG_TRIGGERED = 0x04
+FLAG_NOT_READY = 0x08
+
+# Sentinel value returned as the flags byte when the supplied PIN is rejected.
+AUTH_REJECTED = 0xFF
+
 # Default number of seconds to wait for a response before giving up. Defined
 # here (rather than in const.py) so this module has no dependency on the
 # rest of the Home Assistant integration and can be tested in isolation.
@@ -105,7 +114,7 @@ def _parse_frame(data: bytes) -> OrisecStatus:
     if _checksum(body) != checksum:
         raise OrisecError("Checksum mismatch in response frame from panel")
 
-    if body[0] == 0xFF:
+    if body[0] == AUTH_REJECTED:
         raise OrisecAuthError("Panel rejected the configured PIN")
 
     flags = body[0]
@@ -118,10 +127,10 @@ def _parse_frame(data: bytes) -> OrisecStatus:
             zones[zone_index + 1] = bool(zone_bitmap[byte_index] & (1 << bit_index))
 
     return OrisecStatus(
-        armed_away=bool(flags & 0x01),
-        armed_home=bool(flags & 0x02),
-        triggered=bool(flags & 0x04),
-        ready=not bool(flags & 0x08),
+        armed_away=bool(flags & FLAG_ARMED_AWAY),
+        armed_home=bool(flags & FLAG_ARMED_HOME),
+        triggered=bool(flags & FLAG_TRIGGERED),
+        ready=not bool(flags & FLAG_NOT_READY),
         zones=zones,
     )
 

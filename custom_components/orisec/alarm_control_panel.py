@@ -1,6 +1,8 @@
 """Alarm control panel platform for Orisec."""
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
+
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelEntity,
     AlarmControlPanelEntityFeature,
@@ -13,7 +15,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .api import OrisecError
+from .api import OrisecError, OrisecStatus
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import OrisecDataUpdateCoordinator
 
@@ -75,7 +77,9 @@ class OrisecAlarmPanel(CoordinatorEntity[OrisecDataUpdateCoordinator], AlarmCont
         """Send arm home command."""
         await self._async_send_command(self.coordinator.client.async_arm_home)
 
-    async def _async_send_command(self, command) -> None:  # noqa: ANN001
+    async def _async_send_command(
+        self, command: Callable[[], Awaitable[OrisecStatus]]
+    ) -> None:
         """Send a command to the panel, surfacing failures to the UI."""
         try:
             await command()
