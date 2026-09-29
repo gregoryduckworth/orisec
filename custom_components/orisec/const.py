@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from .api import DEFAULT_TIMEOUT  # noqa: F401  (re-exported for convenience)
-
 DOMAIN = "orisec"
 
 CONF_HOST = "host"

@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
-from .api import OrisecClient, OrisecError
-from .const import CONF_HOST, CONF_PIN, CONF_PORT, DEFAULT_TIMEOUT, DOMAIN
+from .api import DEFAULT_TIMEOUT, OrisecClient, OrisecError
+from .const import CONF_HOST, CONF_PIN, CONF_PORT, DOMAIN
 from .coordinator import OrisecDataUpdateCoordinator
 
-PLATFORMS = ["alarm_control_panel", "binary_sensor"]
+PLATFORMS = [Platform.ALARM_CONTROL_PANEL, Platform.BINARY_SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
